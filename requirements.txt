@@ -1,0 +1,17 @@
+pandas
+numpy
+scikit-learn
+matplotlib
+seaborn
+fastapi
+uvicorn[standard]
+jinja2
+python-multipart
+aiofiles
+websockets
+joblib
+imbalanced-learn
+xgboost
+lightgbm
+psutil
+scapy

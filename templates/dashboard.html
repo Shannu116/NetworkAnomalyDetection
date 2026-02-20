@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛡️ Network Anomaly Detection System</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        /* ══════════════════════════════════════════════════════
+           CSS — Dark Cyber Theme
+           ══════════════════════════════════════════════════════ */
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #111827;
+            --bg-card: #1a2332;
+            --bg-card-hover: #1f2b3d;
+            --border: #2a3a4f;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-yellow: #f59e0b;
+            --accent-purple: #8b5cf6;
+            --accent-orange: #f97316;
+            --glow-blue: rgba(59, 130, 246, 0.15);
+            --glow-red: rgba(239, 68, 68, 0.15);
+            --glow-green: rgba(16, 185, 129, 0.15);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── Animated background ─────────────────────────────── */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                radial-gradient(ellipse at 20% 50%, rgba(59,130,246,0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(6,182,212,0.04) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(139,92,246,0.04) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ── Header ──────────────────────────────────────────── */
+        .header {
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-card) 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-logo {
+            font-size: 28px;
+            filter: drop-shadow(0 0 8px rgba(59,130,246,0.5));
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header h1 span {
+            font-weight: 400;
+            font-size: 14px;
+            color: var(--text-secondary);
+            -webkit-text-fill-color: var(--text-secondary);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            border: 1px solid var(--border);
+        }
+
+        .status-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: var(--accent-red);
+            animation: none;
+        }
+
+        .status-dot.active {
+            background: var(--accent-green);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(16,185,129,0); }
+        }
+
+        .btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, var(--accent-green), #059669);
+            color: white;
+        }
+        .btn-start:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(16,185,129,0.3); }
+
+        .btn-stop {
+            background: linear-gradient(135deg, var(--accent-red), #dc2626);
+            color: white;
+        }
+        .btn-stop:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(239,68,68,0.3); }
+
+        /* ── Main layout ─────────────────────────────────────── */
+        .main {
+            padding: 24px 32px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── Stats cards ─────────────────────────────────────── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            background: var(--bg-card-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        .stat-card .stat-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .stat-card .stat-value {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .stat-card .stat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card.anomaly { border-left: 4px solid var(--accent-red); }
+        .stat-card.anomaly .stat-value { color: var(--accent-red); }
+
+        .stat-card.normal { border-left: 4px solid var(--accent-green); }
+        .stat-card.normal .stat-value { color: var(--accent-green); }
+
+        .stat-card.total { border-left: 4px solid var(--accent-blue); }
+        .stat-card.total .stat-value { color: var(--accent-blue); }
+
+        .stat-card.rate { border-left: 4px solid var(--accent-yellow); }
+        .stat-card.rate .stat-value { color: var(--accent-yellow); }
+
+        .stat-card.uptime { border-left: 4px solid var(--accent-purple); }
+        .stat-card.uptime .stat-value { color: var(--accent-purple); }
+
+        /* ── Charts section ──────────────────────────────────── */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .chart-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .chart-card h3 {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 250px;
+        }
+
+        /* ── Tabs ────────────────────────────────────────────── */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border: none;
+            background: none;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab:hover { color: var(--text-primary); }
+        .tab.active {
+            color: var(--accent-cyan);
+            border-bottom-color: var(--accent-cyan);
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* ── Live feed table ─────────────────────────────────── */
+        .feed-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .feed-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .feed-table thead th {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+        }
+
+        .feed-table tbody {
+            display: block;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .feed-table thead, .feed-table tbody tr {
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+        }
+
+        .feed-table tbody tr {
+            border-bottom: 1px solid rgba(42,58,79,0.5);
+            transition: background 0.15s;
+        }
+
+        .feed-table tbody tr:hover {
+            background: rgba(59,130,246,0.05);
+        }
+
+        .feed-table td {
+            padding: 10px 16px;
+        }
+
+        .feed-table tbody tr.anomaly-row {
+            background: var(--glow-red);
+            border-left: 3px solid var(--accent-red);
+        }
+
+        .feed-table tbody tr.normal-row {
+            border-left: 3px solid transparent;
+        }
+
+        /* ── Badges ──────────────────────────────────────────── */
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-anomaly {
+            background: rgba(239,68,68,0.15);
+            color: var(--accent-red);
+            border: 1px solid rgba(239,68,68,0.3);
+        }
+
+        .badge-normal {
+            background: rgba(16,185,129,0.15);
+            color: var(--accent-green);
+            border: 1px solid rgba(16,185,129,0.3);
+        }
+
+        .badge-critical {
+            background: rgba(239,68,68,0.2);
+            color: #ff6b6b;
+            border: 1px solid rgba(239,68,68,0.4);
+            animation: flash 1s infinite;
+        }
+
+        .badge-high {
+            background: rgba(249,115,22,0.15);
+            color: var(--accent-orange);
+            border: 1px solid rgba(249,115,22,0.3);
+        }
+
+        .badge-medium {
+            background: rgba(245,158,11,0.15);
+            color: var(--accent-yellow);
+            border: 1px solid rgba(245,158,11,0.3);
+        }
+
+        .badge-low {
+            background: rgba(139,92,246,0.15);
+            color: var(--accent-purple);
+            border: 1px solid rgba(139,92,246,0.3);
+        }
+
+        @keyframes flash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .badge-real {
+            background: rgba(6,182,212,0.15);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(6,182,212,0.3);
+        }
+
+        /* ── Model Results section ───────────────────────────── */
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+        }
+
+        .model-result-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .model-result-card h4 {
+            font-size: 14px;
+            color: var(--accent-cyan);
+            margin-bottom: 12px;
+        }
+
+        .metric-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .metric-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            width: 80px;
+        }
+
+        .metric-track {
+            flex: 1;
+            height: 8px;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .metric-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 1s ease;
+        }
+
+        .metric-value {
+            font-size: 12px;
+            font-weight: 700;
+            width: 50px;
+            text-align: right;
+        }
+
+        /* ── Plots gallery ───────────────────────────────────── */
+        .plots-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 16px;
+        }
+
+        .plot-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .plot-card img {
+            max-width: 100%;
+            border-radius: 8px;
+        }
+
+        /* ── Empty state ─────────────────────────────────────── */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+        .empty-state p { font-size: 14px; }
+
+        /* ── Scrollbar ───────────────────────────────────────── */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-secondary); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        /* ── Responsive ──────────────────────────────────────── */
+        @media (max-width: 768px) {
+            .header { padding: 12px 16px; flex-wrap: wrap; }
+            .main { padding: 16px; }
+            .charts-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        /* ── Alert toast ─────────────────────────────────────── */
+        .toast-container {
+            position: fixed;
+            top: 80px;
+            right: 24px;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast {
+            background: var(--bg-card);
+            border: 1px solid var(--accent-red);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease, fadeOut 0.5s ease 4.5s forwards;
+            max-width: 350px;
+            box-shadow: 0 4px 20px rgba(239,68,68,0.2);
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            to { opacity: 0; transform: translateX(50%); }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     HEADER
+     ═══════════════════════════════════════════════════════════ -->
+<header class="header">
+    <div class="header-left">
+        <span class="header-logo">🛡️</span>
+        <h1>Network Anomaly Detection<br><span>ML-Powered Real-Time Monitoring</span></h1>
+    </div>
+    <div class="header-right">
+        <div class="status-indicator" id="statusIndicator">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="statusText">Offline</span>
+        </div>
+        <button class="btn btn-start" id="btnStart" onclick="startDetection()">
+            ▶ Start
+        </button>
+        <button class="btn btn-stop" id="btnStop" onclick="stopDetection()" style="display:none;">
+            ⏹ Stop
+        </button>
+    </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════
+     LIVE STATUS BAR
+     ═══════════════════════════════════════════════════════════ -->
+<div style="display:flex;align-items:center;gap:16px;padding:10px 32px;background:var(--bg-secondary);border-bottom:1px solid var(--border);font-size:13px;position:relative;z-index:99;">
+    <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:16px;font-size:12px;font-weight:700;text-transform:uppercase;background:rgba(239,68,68,0.15);color:var(--accent-red);border:1px solid rgba(239,68,68,0.3);">🔴 LIVE CAPTURE</span>
+    <span style="color:var(--text-secondary);font-weight:600;">Interface:</span>
+    <select id="ifaceSelect" onchange="switchInterface()" style="background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:13px;cursor:pointer;"></select>
+    <span style="color:var(--text-muted);font-size:12px;" id="ifaceInfo"></span>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MAIN CONTENT
+     ═══════════════════════════════════════════════════════════ -->
+<main class="main">
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card total">
+            <div class="stat-icon">📊</div>
+            <div class="stat-value" id="statTotal">0</div>
+            <div class="stat-label">Flows Analyzed</div>
+        </div>
+        <div class="stat-card normal">
+            <div class="stat-icon">✅</div>
+            <div class="stat-value" id="statNormal">0</div>
+            <div class="stat-label">Normal</div>
+        </div>
+        <div class="stat-card anomaly">
+            <div class="stat-icon">🚨</div>
+            <div class="stat-value" id="statAnomaly">0</div>
+            <div class="stat-label">Anomalies</div>
+        </div>
+        <div class="stat-card rate">
+            <div class="stat-icon">📈</div>
+            <div class="stat-value" id="statRate">0%</div>
+            <div class="stat-label">Anomaly Rate</div>
+        </div>
+        <div class="stat-card" style="border-left: 4px solid var(--accent-cyan);">
+            <div class="stat-icon">📡</div>
+            <div class="stat-value" style="color:var(--accent-cyan);font-size:20px;" id="statInterface">—</div>
+            <div class="stat-label">Interface / Source</div>
+        </div>
+        <div class="stat-card uptime">
+            <div class="stat-icon">⏱️</div>
+            <div class="stat-value" id="statUptime">0s</div>
+            <div class="stat-label">Uptime</div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab('live')">🔴 Live Feed</button>
+        <button class="tab" onclick="switchTab('charts')">📊 Charts</button>
+        <button class="tab" onclick="switchTab('results')">🏆 Model Results</button>
+        <button class="tab" onclick="switchTab('plots')">📸 Analysis Plots</button>
+    </div>
+
+    <!-- ── TAB: Live Feed ────────────────────────────────────── -->
+    <div class="tab-content active" id="tab-live">
+        <!-- Charts row -->
+        <div class="charts-grid" style="margin-bottom: 20px;">
+            <div class="chart-card">
+                <h3>📈 Detection Timeline</h3>
+                <div class="chart-container">
+                    <canvas id="timelineChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>🎯 Severity Distribution</h3>
+                <div class="chart-container">
+                    <canvas id="severityChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live feed table -->
+        <div class="feed-container">
+            <table class="feed-table">
+                <thead>
+                    <tr>
+                        <th style="width:4%">#</th>
+                        <th style="width:12%">Timestamp</th>
+                        <th style="width:8%">Status</th>
+                        <th style="width:9%">Confidence</th>
+                        <th style="width:7%">Severity</th>
+                        <th style="width:13%">Source IP</th>
+                        <th style="width:13%">Dest IP</th>
+                        <th style="width:6%">Proto</th>
+                        <th style="width:7%">Service</th>
+                        <th style="width:10%">Ports</th>
+                        <th style="width:11%">Flow</th>
+                    </tr>
+                </thead>
+                <tbody id="feedBody">
+                    <tr>
+                        <td colspan="12">
+                            <div class="empty-state">
+                                <div class="icon">🔍</div>
+                                <p>Click <strong>▶ Start</strong> to begin live network anomaly detection</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ── TAB: Charts ───────────────────────────────────────── -->
+    <div class="tab-content" id="tab-charts">
+        <div class="charts-grid" style="grid-template-columns: 1fr 1fr;">
+            <div class="chart-card">
+                <h3>📊 Normal vs Anomaly Distribution</h3>
+                <div class="chart-container">
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>📈 Cumulative Detections</h3>
+                <div class="chart-container">
+                    <canvas id="cumulativeChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── TAB: Model Results ────────────────────────────────── -->
+    <div class="tab-content" id="tab-results">
+        <div id="modelResultsContainer">
+            <div class="empty-state">
+                <div class="icon">📊</div>
+                <p>Loading model comparison results...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── TAB: Analysis Plots ───────────────────────────────── -->
+    <div class="tab-content" id="tab-plots">
+        <div class="plots-gallery" id="plotsGallery">
+            <div class="empty-state">
+                <div class="icon">📸</div>
+                <p>Loading analysis plots...</p>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<!-- Toast container for alerts -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  JavaScript — Dashboard Logic
+// ═══════════════════════════════════════════════════════════════
+
+let ws = null;
+let isRunning = false;
+let timelineChart, severityChart, pieChart, cumulativeChart;
+let cumulativeNormal = 0, cumulativeAnomaly = 0;
+let cumulativeLabels = [], cumulativeNormalData = [], cumulativeAnomalyData = [];
+
+// ── Initialize Charts ────────────────────────────────────────
+
+function initCharts() {
+    // Timeline Chart
+    const tlCtx = document.getElementById('timelineChart').getContext('2d');
+    timelineChart = new Chart(tlCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: 'Anomalies',
+                    data: [],
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239,68,68,0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#ef4444',
+                },
+                {
+                    label: 'Normal',
+                    data: [],
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16,185,129,0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#10b981',
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { ticks: { color: '#64748b', maxTicksLimit: 10, font: { size: 10 } }, grid: { color: 'rgba(42,58,79,0.3)' } },
+                y: { ticks: { color: '#64748b' }, grid: { color: 'rgba(42,58,79,0.3)' }, beginAtZero: true },
+            },
+            plugins: { legend: { labels: { color: '#94a3b8' } } },
+            animation: { duration: 500 },
+        },
+    });
+
+    // Severity Doughnut
+    const sevCtx = document.getElementById('severityChart').getContext('2d');
+    severityChart = new Chart(sevCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Critical', 'High', 'Medium', 'Low', 'Normal'],
+            datasets: [{
+                data: [0, 0, 0, 0, 0],
+                backgroundColor: ['#ef4444', '#f97316', '#f59e0b', '#8b5cf6', '#10b981'],
+                borderWidth: 0,
+            }],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '60%',
+            plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 12, font: { size: 11 } } } },
+        },
+    });
+
+    // Pie Chart
+    const pieCtx = document.getElementById('pieChart').getContext('2d');
+    pieChart = new Chart(pieCtx, {
+        type: 'pie',
+        data: {
+            labels: ['Normal', 'Anomaly'],
+            datasets: [{
+                data: [0, 0],
+                backgroundColor: ['#10b981', '#ef4444'],
+                borderWidth: 0,
+            }],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 16 } } },
+        },
+    });
+
+    // Cumulative Chart
+    const cumCtx = document.getElementById('cumulativeChart').getContext('2d');
+    cumulativeChart = new Chart(cumCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: 'Cumulative Anomalies',
+                    data: [],
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239,68,68,0.05)',
+                    fill: true,
+                    tension: 0.3,
+                },
+                {
+                    label: 'Cumulative Normal',
+                    data: [],
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16,185,129,0.05)',
+                    fill: true,
+                    tension: 0.3,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { ticks: { color: '#64748b', maxTicksLimit: 10, font: { size: 10 } }, grid: { color: 'rgba(42,58,79,0.3)' } },
+                y: { ticks: { color: '#64748b' }, grid: { color: 'rgba(42,58,79,0.3)' } },
+            },
+            plugins: { legend: { labels: { color: '#94a3b8' } } },
+        },
+    });
+}
+
+// ── WebSocket connection ─────────────────────────────────────
+
+function connectWebSocket() {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+
+    ws.onopen = () => console.log('[WS] Connected');
+
+    ws.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+
+        if (msg.type === 'init') {
+            updateStatus(msg.is_running);
+        }
+
+        if (msg.type === 'detections') {
+            updateStats(msg.stats);
+            updateTimeline(msg.timeline);
+            updateSeverity(msg.severity);
+            addDetections(msg.data);
+        }
+
+        if (msg.type === 'status') {
+            console.log('[WS] Status:', msg.message);
+        }
+    };
+
+    ws.onclose = () => {
+        console.log('[WS] Disconnected, reconnecting in 3s...');
+        setTimeout(connectWebSocket, 3000);
+    };
+
+    ws.onerror = (err) => console.error('[WS] Error:', err);
+}
+
+// ── Start / Stop ─────────────────────────────────────────────
+
+function startDetection() {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ action: 'start' }));
+    } else {
+        fetch('/api/start', { method: 'POST' });
+    }
+    updateStatus(true);
+}
+
+function stopDetection() {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ action: 'stop' }));
+    } else {
+        fetch('/api/stop', { method: 'POST' });
+    }
+    updateStatus(false);
+}
+
+function updateStatus(running) {
+    isRunning = running;
+    document.getElementById('statusDot').className = 'status-dot' + (running ? ' active' : '');
+    document.getElementById('statusText').textContent = running ? 'Detecting' : 'Offline';
+    document.getElementById('btnStart').style.display = running ? 'none' : 'flex';
+    document.getElementById('btnStop').style.display = running ? 'flex' : 'none';
+}
+
+// ── Update UI ────────────────────────────────────────────────
+
+function updateStats(stats) {
+    document.getElementById('statTotal').textContent = stats.total_packets.toLocaleString();
+    document.getElementById('statNormal').textContent = stats.normal_count.toLocaleString();
+    document.getElementById('statAnomaly').textContent = stats.anomaly_count.toLocaleString();
+    document.getElementById('statRate').textContent = stats.anomaly_rate + '%';
+    document.getElementById('statUptime').textContent = formatUptime(stats.uptime_sec);
+    if (stats.interface) {
+        document.getElementById('statInterface').textContent = stats.interface;
+    }
+    if (stats.raw_packets !== undefined) {
+        document.getElementById('statTotal').title = `Raw packets: ${stats.raw_packets}`;
+    }
+
+    // Update pie chart
+    pieChart.data.datasets[0].data = [stats.normal_count, stats.anomaly_count];
+    pieChart.update('none');
+}
+
+function formatUptime(sec) {
+    if (sec < 60) return Math.round(sec) + 's';
+    if (sec < 3600) return Math.floor(sec / 60) + 'm ' + Math.round(sec % 60) + 's';
+    return Math.floor(sec / 3600) + 'h ' + Math.floor((sec % 3600) / 60) + 'm';
+}
+
+function updateTimeline(timeline) {
+    const labels = timeline.timestamps.map(t => t.substring(11));
+    timelineChart.data.labels = labels;
+    timelineChart.data.datasets[0].data = timeline.anomaly_counts;
+    timelineChart.data.datasets[1].data = timeline.normal_counts;
+    timelineChart.update('none');
+}
+
+function updateSeverity(severity) {
+    severityChart.data.datasets[0].data = [
+        severity.CRITICAL || 0,
+        severity.HIGH || 0,
+        severity.MEDIUM || 0,
+        severity.LOW || 0,
+        severity.NONE || 0,
+    ];
+    severityChart.update('none');
+}
+
+function addDetections(detections) {
+    const tbody = document.getElementById('feedBody');
+
+    // Clear empty state
+    if (tbody.querySelector('.empty-state')) {
+        tbody.innerHTML = '';
+    }
+
+    let criticalCount = 0;
+
+    detections.forEach(d => {
+        const row = document.createElement('tr');
+        row.className = d.prediction === 1 ? 'anomaly-row' : 'normal-row';
+
+        const severityBadge = d.severity !== 'NONE'
+            ? `<span class="badge badge-${d.severity.toLowerCase()}">${d.severity}</span>`
+            : '<span style="color:var(--text-muted)">—</span>';
+
+        const statusBadge = d.prediction === 1
+            ? '<span class="badge badge-anomaly">ANOMALY</span>'
+            : '<span class="badge badge-normal">NORMAL</span>';
+
+        const svc = d.service && d.service !== '-' ? d.service : '<span style="color:var(--text-muted)">—</span>';
+        const ports = `${d.src_port} → ${d.dst_port || '?'}`;
+        const flowInfo = d.flow_packets ? `${d.flow_packets}pkts / ${formatBytes(d.flow_bytes || 0)}` : '—';
+
+        row.innerHTML = `
+            <td>${d.packet_id}</td>
+            <td>${d.timestamp.substring(11)}</td>
+            <td>${statusBadge}</td>
+            <td><strong style="color:${d.confidence > 0.7 ? 'var(--accent-red)' : 'var(--accent-green)'}">${(d.confidence * 100).toFixed(1)}%</strong></td>
+            <td>${severityBadge}</td>
+            <td><code>${d.src_ip}</code></td>
+            <td><code>${d.dst_ip}</code></td>
+            <td>${d.protocol}</td>
+            <td>${svc}</td>
+            <td style="font-size:11px;">${ports}</td>
+            <td style="font-size:11px;">${flowInfo}</td>
+        `;
+
+        tbody.insertBefore(row, tbody.firstChild);
+
+        if (d.severity === 'CRITICAL') criticalCount++;
+
+        // Update cumulative
+        if (d.prediction === 1) cumulativeAnomaly++;
+        else cumulativeNormal++;
+    });
+
+    // Trim table to 200 rows
+    while (tbody.rows.length > 200) {
+        tbody.removeChild(tbody.lastChild);
+    }
+
+    // Update cumulative chart
+    const now = new Date().toTimeString().substring(0, 8);
+    cumulativeLabels.push(now);
+    cumulativeNormalData.push(cumulativeNormal);
+    cumulativeAnomalyData.push(cumulativeAnomaly);
+    if (cumulativeLabels.length > 50) {
+        cumulativeLabels.shift();
+        cumulativeNormalData.shift();
+        cumulativeAnomalyData.shift();
+    }
+    cumulativeChart.data.labels = cumulativeLabels;
+    cumulativeChart.data.datasets[0].data = cumulativeAnomalyData;
+    cumulativeChart.data.datasets[1].data = cumulativeNormalData;
+    cumulativeChart.update('none');
+
+    // Toast for critical detections
+    if (criticalCount > 0) {
+        showToast(`🚨 ${criticalCount} CRITICAL anomal${criticalCount > 1 ? 'ies' : 'y'} detected!`);
+    }
+}
+
+// ── Toast notifications ──────────────────────────────────────
+
+function showToast(message) {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = `<span>🔴</span> <span>${message}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 5000);
+}
+
+// ── Tab switching ────────────────────────────────────────────
+
+function switchTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+
+    event.target.classList.add('active');
+    document.getElementById('tab-' + name).classList.add('active');
+
+    if (name === 'results') loadModelResults();
+    if (name === 'plots') loadPlots();
+}
+
+// ── Load model results ───────────────────────────────────────
+
+async function loadModelResults() {
+    try {
+        const resp = await fetch('/api/model-results');
+        const data = await resp.json();
+        const container = document.getElementById('modelResultsContainer');
+
+        if (!data || Object.keys(data).length === 0) {
+            container.innerHTML = '<div class="empty-state"><div class="icon">📊</div><p>No training results yet. Run training first.</p></div>';
+            return;
+        }
+
+        let html = '';
+        for (const [dataset, models] of Object.entries(data)) {
+            html += `<h3 style="color:var(--accent-cyan);margin-bottom:16px;font-size:16px;">📊 ${dataset.toUpperCase()} Dataset Results</h3>`;
+            html += '<div class="results-grid">';
+
+            models.forEach(m => {
+                const isBest = m.f1_score >= Math.max(...models.map(x => x.f1_score));
+                const borderColor = isBest ? 'var(--accent-green)' : 'var(--border)';
+
+                html += `
+                    <div class="model-result-card" style="border-color:${borderColor}">
+                        <h4>${isBest ? '🏆 ' : ''}${m.model} ${isBest ? '(BEST)' : ''}</h4>
+                        ${metricBar('Accuracy', m.accuracy, '#3b82f6')}
+                        ${metricBar('Precision', m.precision, '#06b6d4')}
+                        ${metricBar('Recall', m.recall, '#10b981')}
+                        ${metricBar('F1 Score', m.f1_score, '#f59e0b')}
+                        ${m.roc_auc ? metricBar('ROC AUC', m.roc_auc, '#8b5cf6') : ''}
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">⏱️ Training: ${m.train_time_sec}s</div>
+                    </div>
+                `;
+            });
+            html += '</div><br>';
+        }
+
+        container.innerHTML = html;
+    } catch (e) {
+        console.error('Error loading results:', e);
+    }
+}
+
+function metricBar(label, value, color) {
+    const pct = (value * 100).toFixed(1);
+    return `
+        <div class="metric-bar">
+            <span class="metric-label">${label}</span>
+            <div class="metric-track">
+                <div class="metric-fill" style="width:${pct}%;background:${color}"></div>
+            </div>
+            <span class="metric-value" style="color:${color}">${pct}%</span>
+        </div>
+    `;
+}
+
+// ── Load plots ───────────────────────────────────────────────
+
+async function loadPlots() {
+    try {
+        const resp = await fetch('/api/plots');
+        const plots = await resp.json();
+        const container = document.getElementById('plotsGallery');
+
+        if (!plots || plots.length === 0) {
+            container.innerHTML = '<div class="empty-state"><div class="icon">📸</div><p>No analysis plots yet. Run training first.</p></div>';
+            return;
+        }
+
+        container.innerHTML = plots.map(p => `
+            <div class="plot-card">
+                <img src="${p}" alt="${p.split('/').pop()}" loading="lazy">
+                <div style="font-size:12px;color:var(--text-secondary);margin-top:8px;">${p.split('/').pop().replace('.png','').replace(/_/g,' ')}</div>
+            </div>
+        `).join('');
+    } catch (e) {
+        console.error('Error loading plots:', e);
+    }
+}
+
+// ── Interface switching ─────────────────────────────────────
+
+function formatBytes(bytes) {
+    if (bytes < 1024) return bytes + 'B';
+    if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + 'KB';
+    return (bytes/1024/1024).toFixed(1) + 'MB';
+}
+
+async function loadInterfaces() {
+    try {
+        const resp = await fetch('/api/interfaces');
+        const data = await resp.json();
+        const sel = document.getElementById('ifaceSelect');
+        sel.innerHTML = '';
+
+        if (data.interfaces) {
+            data.interfaces.forEach(iface => {
+                if (iface.is_loopback) return;
+                const opt = document.createElement('option');
+                opt.value = iface.name;
+                const ips = iface.ips.length ? ` (${iface.ips.join(', ')})` : '';
+                const status = iface.is_up ? '🟢' : '🔴';
+                opt.textContent = `${status} ${iface.name}${ips}`;
+                if (iface.name === data.recommended) opt.selected = true;
+                sel.appendChild(opt);
+            });
+        }
+        if (data.recommended) {
+            document.getElementById('ifaceInfo').textContent = `Recommended: ${data.recommended}`;
+        }
+    } catch (e) {
+        console.error('Error loading interfaces:', e);
+    }
+}
+
+async function switchInterface() {
+    const iface = document.getElementById('ifaceSelect').value;
+
+    // Stop current detection first
+    if (isRunning) {
+        await fetch('/api/stop', { method: 'POST' });
+        updateStatus(false);
+    }
+
+    try {
+        const resp = await fetch(`/api/switch-interface?interface=${iface}`, { method: 'POST' });
+        const data = await resp.json();
+        if (data.error) {
+            showToast(`❌ Interface switch failed: ${data.error}`);
+        } else {
+            showToast(`✅ Switched to interface: ${iface}`);
+            document.getElementById('statInterface').textContent = iface;
+        }
+    } catch (e) {
+        showToast(`❌ Error: ${e.message}`);
+    }
+}
+
+async function loadCurrentMode() {
+    try {
+        const resp = await fetch('/api/mode');
+        const data = await resp.json();
+        if (data.interface) {
+            document.getElementById('statInterface').textContent = data.interface;
+        }
+    } catch (e) {}
+}
+
+// ── Init ─────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', () => {
+    initCharts();
+    connectWebSocket();
+    loadModelResults();
+    loadInterfaces();
+    loadCurrentMode();
+});
+</script>
+
+</body>
+</html>
