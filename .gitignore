@@ -28,10 +28,8 @@ data/processed/
 # ═══════════════════════════════════════════════════════════
 #  Trained Models (large binary files)
 # ═══════════════════════════════════════════════════════════
-data/models/*.pkl
 
 # Keep the results JSON files
-!data/models/results_*.json
 
 # ═══════════════════════════════════════════════════════════
 #  Logs (generated at runtime)
