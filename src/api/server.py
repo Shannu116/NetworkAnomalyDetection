@@ -84,10 +84,10 @@ async def detection_loop():
     """Continuously detect anomalies and broadcast to WebSocket clients."""
     while detector and detector.is_running:
         detections = detector.detect_once(batch_size=5)
-        if detections and connected_clients:
+        if connected_clients:
             payload = json.dumps({
                 "type": "detections",
-                "data": detections,
+                "data": detections if detections else [],
                 "stats": detector.get_stats(),
                 "timeline": detector.get_timeline_data(),
                 "severity": detector.get_severity_distribution(),
@@ -99,7 +99,8 @@ async def detection_loop():
                 except Exception:
                     dead.append(ws)
             for ws in dead:
-                connected_clients.remove(ws)
+                if ws in connected_clients:
+                    connected_clients.remove(ws)
         await asyncio.sleep(1.0)
 
 

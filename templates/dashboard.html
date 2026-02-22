@@ -57,7 +57,7 @@
         .header {
             background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-card) 100%);
             border-bottom: 1px solid var(--border);
-            padding: 16px 32px;
+            padding: 16px clamp(16px, 3vw, 32px);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -154,7 +154,7 @@
 
         /* ── Main layout ─────────────────────────────────────── */
         .main {
-            padding: 24px 32px;
+            padding: clamp(12px, 2vw, 24px) clamp(16px, 3vw, 32px);
             position: relative;
             z-index: 1;
         }
@@ -162,7 +162,7 @@
         /* ── Stats cards ─────────────────────────────────────── */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
             gap: 16px;
             margin-bottom: 24px;
         }
@@ -187,7 +187,7 @@
         }
 
         .stat-card .stat-value {
-            font-size: 28px;
+            font-size: clamp(20px, 2.5vw, 28px);
             font-weight: 800;
             margin-bottom: 4px;
         }
@@ -217,7 +217,7 @@
         /* ── Charts section ──────────────────────────────────── */
         .charts-grid {
             display: grid;
-            grid-template-columns: 2fr 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr));
             gap: 16px;
             margin-bottom: 24px;
         }
@@ -241,7 +241,7 @@
 
         .chart-container {
             position: relative;
-            height: 250px;
+            height: clamp(180px, 25vh, 350px);
         }
 
         /* ── Tabs ────────────────────────────────────────────── */
@@ -304,7 +304,7 @@
 
         .feed-table tbody {
             display: block;
-            max-height: 400px;
+            max-height: clamp(250px, 40vh, 600px);
             overflow-y: auto;
         }
 
@@ -398,7 +398,7 @@
         /* ── Model Results section ───────────────────────────── */
         .results-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
             gap: 16px;
         }
 
@@ -452,7 +452,7 @@
         /* ── Plots gallery ───────────────────────────────────── */
         .plots-gallery {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr));
             gap: 16px;
         }
 
@@ -555,7 +555,7 @@
 <!-- ═══════════════════════════════════════════════════════════
      LIVE STATUS BAR
      ═══════════════════════════════════════════════════════════ -->
-<div style="display:flex;align-items:center;gap:16px;padding:10px 32px;background:var(--bg-secondary);border-bottom:1px solid var(--border);font-size:13px;position:relative;z-index:99;">
+<div style="display:flex;align-items:center;gap:12px;padding:10px clamp(16px, 3vw, 32px);background:var(--bg-secondary);border-bottom:1px solid var(--border);font-size:13px;position:relative;z-index:99;flex-wrap:wrap;">
     <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:16px;font-size:12px;font-weight:700;text-transform:uppercase;background:rgba(239,68,68,0.15);color:var(--accent-red);border:1px solid rgba(239,68,68,0.3);">🔴 LIVE CAPTURE</span>
     <span style="color:var(--text-secondary);font-weight:600;">Interface:</span>
     <select id="ifaceSelect" onchange="switchInterface()" style="background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:13px;cursor:pointer;"></select>
@@ -661,7 +661,7 @@
 
     <!-- ── TAB: Charts ───────────────────────────────────────── -->
     <div class="tab-content" id="tab-charts">
-        <div class="charts-grid" style="grid-template-columns: 1fr 1fr;">
+        <div class="charts-grid">
             <div class="chart-card">
                 <h3>📊 Normal vs Anomaly Distribution</h3>
                 <div class="chart-container">
@@ -942,6 +942,8 @@ function updateSeverity(severity) {
 }
 
 function addDetections(detections) {
+    if (!detections || detections.length === 0) return;
+
     const tbody = document.getElementById('feedBody');
 
     // Clear empty state
