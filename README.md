@@ -497,8 +497,8 @@ This project is developed as a **Capstone Project** for academic purposes.
 
 ## 👨‍💻 Author
 
-**Shannu** — Network Security & Machine Learning
-**KESAVA-0725**
+- **Shannu** — Network Security & Machine Learning
+- **KESAVA-0725**
 
 ---
 
